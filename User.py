@@ -1,77 +1,16 @@
-Gjenstår:
-    
-    Skrive overgangsgreier som flytter folk fra en til en annen state
-    Skrive nybruker-funksjon som kan brukes til å:
-        initialisere en brukerpopoulasjon
-        gi nye brukere over tid
-    skrive "ettårs" funksjon som:
-        oppdaterer medlemmene
-        rensker ut døde
-        skriver ut logget info
-        flytter brukere mellom states
-        tar inn nye brukere
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan 23 13:37:08 2015
+
+@author: olejrogeberg
+
+This file contains the class User, which describes an individual user, as well
+as providing methods for updating the user's use-level, history, death and OD
+risks over time.
+"""
 
 import random
 
-class State(object):
-    
-    def __init__(self):
-        self.members=set([])
-        self.dead=set([])
-        self.od=set([])
-        
-    def update_members(self,state):
-        for member in self.members:
-            member.update(state)
-            if member.alive==False:
-                self.dead.add(member)
-            if member.od==True:
-                self.od.add(member)
-        for corpse in self.dead:
-            self.members.remove(corpse)
- 
-            
-    def summarize(self):
-        """Exports information on the state,
-        such as number of members, their age,
-        their use level etc"""
-        pass
-        
-class NoTreatment(State):
-    use_shock = (0,0)
-    use_risk_shock = 1
-    death_risk_shock = 1
-
-    def __init__(self):
-        super(State,self).__init__()
-        
-    def update(self):
-        super(State,self).update_members("NoTreatment")
-        
-class DrugFreeTreatment(State):
-    use_shock = (-5,2)
-    use_risk = 1
-    death_risk_shock = 0.7
-
-    def __init__(self):
-        super(State,self).__init__()
-        
-    def update(self):
-        super(State,self).update_members("DrugFreeTreatment")
-
-
-class OMT(State):
-    use_shock = (-2,1)
-    use_risk = 0.5
-    death_risk_shock = 0.7
-
-    def __init__(self):
-        super(State,self).__init__()
-        
-    def update(self):
-        super(State,self).update_members("OMT")
-
-        
 class User(object):
     use_mean_reversion=0.2
     use_shock_sd=2
@@ -86,6 +25,7 @@ class User(object):
         self.use_current=use_set_point
         self.alive = True
         self.od = False
+
     def od_risk_update(self,state):
         own_use_risk = 0.2 * (self.use_current/10.0) * (self.use_current/self.use_history[-1])
         if state == "OMT":
@@ -107,6 +47,7 @@ class User(object):
         elif state == "NoTreatment":
             state_shock = NoTreatment.use_shock
         self.use_current = min(10,max(0,random_drift + state_shock))
+        
     def death_risk_update(self,state):
         initial_risk = 0.001 * 1.02^(self.age-18)
         if state == "OMT":
@@ -116,6 +57,7 @@ class User(object):
         elif state == "NoTreatment":
             state_shock = NoTreatment.death_risk_shock
         self.death_other_risk = initial_risk * state_shock
+
     def risk_draw(self):
         draw = random.random()
         if draw < self.od_risk:
@@ -133,4 +75,5 @@ class User(object):
         self.risk_draw()
         
         
-        
+
+
