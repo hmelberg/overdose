@@ -10,6 +10,8 @@ risks over time.
 """
 
 import random
+import math
+from states import State, NoTreatment, DrugFreeTreatment, OMT
 
 class User(object):
     use_mean_reversion=0.2
@@ -20,21 +22,31 @@ class User(object):
         self.death_other_risk = 0
         self.od_risk = 0
         self.use_set_point=use_set_point
-        self.state_history=list()
-        self.use_history=list()
-        self.use_current=use_set_point
+        self.state_history=list("")
+        self.use_history=[0]
+        self.use_current=0
+        self.use_update("NoTreatment")
         self.alive = True
         self.od = False
 
     def od_risk_update(self,state):
-        own_use_risk = 0.2 * (self.use_current/10.0) * (self.use_current/self.use_history[-1])
+        """Calculates the risk of overdose, which is influenced by the state.
+        To ensure that the probability stays between 0 and 1 I have used
+        a logit-link function."""
+        
         if state == "OMT":
             state_risk = OMT.use_risk
         elif state == "DrugFreeTreatment":
             state_risk = DrugFreeTreatment.use_risk
         elif state == "NoTreatment":
             state_risk = NoTreatment.use_risk
-        self.od_risk = own_use_risk * state_risk
+            
+        own_use_risk_input = -1 + 0.5 * (self.use_current - 5) + \
+            0.1 * (self.use_current - self.use_history[-1]) + state_risk
+        own_use_risk = math.exp(own_use_risk_input)/ \
+            (1+math.exp(own_use_risk_input))
+        self.od_risk = own_use_risk
+        
         
     def use_update(self,state):
         random_drift = self.use_current + \
@@ -46,10 +58,11 @@ class User(object):
             state_shock = DrugFreeTreatment.use_shock
         elif state == "NoTreatment":
             state_shock = NoTreatment.use_shock
-        self.use_current = min(10,max(0,random_drift + state_shock))
+        self.use_current = min(10,max(0,random_drift + \
+            random.normalvariate(state_shock[0],state_shock[1])))
         
     def death_risk_update(self,state):
-        initial_risk = 0.001 * 1.02^(self.age-18)
+        initial_risk = 0.001 * 1.05 ** (self.age-18.0)
         if state == "OMT":
             state_shock = OMT.death_risk_shock
         elif state == "DrugFreeTreatment":
@@ -69,6 +82,7 @@ class User(object):
     def update(self,state):
         self.age += 1
         self.use_history.append(self.use_current)
+        self.state_history.append(state)
         self.use_update(state)
         self.death_risk_update(state)
         self.od_risk_update(state)
