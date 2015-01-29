@@ -24,6 +24,7 @@ Logically, the explanations must be found in, or be a mix of, a limited set of p
         * *Drug leakage from OMT* may increase as the number of patients on OMT increases, affecting the use risks of those who remain outside of treatment.
         * *Users exiting treatment* may have a temporarily heightened risk of overdose. If the system has a lot of "churn" with users shifting often between states, this could raise the average risk faced by those outside of treatment.
         * *Fewer experienced users outside of treatment* could reduce the transfer of experience and informal guidelines and use-culture to new users.
+        * *Fewer users outside of treatment.* If users entering treatment tend to reduce their social contact with users remaining outside of the treatment system, then a declining number of users outside of treatment could make them more likely to use alone or with fewer people around them. This could make an accidental overdose less likely to be treated and more likely to result in death.
       * **Changes within states:** E.g.: A falling number of users operating and dealing with the illegal market could make the market too "thin" and cause it to work less well. User may have difficulty accessing their usual substances, and may shift to new substances or new "coctails" with higher risk.
       * **Changes in the composition of the user population:** An aging population of users could face higher risks due to their age.
 
@@ -38,7 +39,7 @@ The simulation consists of objects at three levels. Starting from the bottom:
   * **NoTreatment** - Users who have never received, or who have exited from, treatment.
   * **DrugFreeTreatment** - Users who receive "traditional" forms of treatment for substance use
   * **OMT** - Users receiving some form of medication meant to replace their use of heroin.
- **Society.** The society contains the three states. It also contains methods for introducing new users into society, for initializing the society, and for running the society and outputting simulation results.
+ **Society.** The society contains the three states. It also contains methods for introducing new users into society (recruitment), for initializing the society, and for running the society and outputting simulation results.
 
  While this set-up has a certain level of complexity, it should hopefully make the final simulation model clean, easy to run, and easy to maintain.
  * Methods for initializing and running a simulation, outputting and visualizing results, etc. are in the Society state.
@@ -52,7 +53,7 @@ The simulation consists of objects at three levels. Starting from the bottom:
  While this is likely to change over time as we develop the model, an initial guess at how this can be done is as follows:
 
  1. **Generate baseline situation.** Since we are attempting to explain the development in overdose mortality since the late nineties, a first step is to establish a situation similar to the one that existed prior to the introduction of OMT in Norway. To do this we gradually phase in new users while letting them age and shift between NoTreatment and DrugFreeTreatment. After a number of years, the earliest cohorts introduced will have aged so that the entire age interval is represented. A first goal is to find a set of parameters and functions that recreates the situation as it was prior to the introduction of OMT.
- 2. **Add OMT.** 
+ 2. **Add OMT.**
     1. Calibrate the transfers between the states so that the growth of members within the different states are plausible and consistent with what was observed.
     1. See what the model would predict in terms of mortality and overdose deaths as a result
     1. Define a set of hypotheses for how overdose mortality could remain high, and model these as separate simulation specifications. Examine how they would play out and affect the system, and to what extent the resulting effects can be examined in empirical data.
