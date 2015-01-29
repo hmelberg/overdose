@@ -14,13 +14,28 @@ def pytest_funcarg__valid_user(request):
 """ We next need to create a set of states populated with users, to make it
 possible to test the state functionality"""
 
-def pytest_funcarg__state_notreat(request):
-    def make_user_set(number):
+def make_user_set(number):
         users = set([])
         for i in range(number):
             users.add(User(17,5))
         return users
+
+def pytest_funcarg__state_notreat(request):
     state = NoTreatment()
     state.receive_members(make_user_set(1000))
     return state
+    
+def pytest_funcarg__state_omt(request):
+    state = OMT()
+    state.receive_members(make_user_set(1000))
+    return state
+
+def pytest_funcarg__state_drugfree(request):
+    state = DrugFreeTreatment()
+    state.receive_members(make_user_set(1000))
+    return state
+    
+def pytest_funcarg__extra_users(request):
+    return make_user_set(100)
+
     
