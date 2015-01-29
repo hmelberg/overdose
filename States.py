@@ -28,9 +28,9 @@ class State(object):
         self.transition_no_treatment=set([])
         self.transition_drug_free_treatment=set([])
         
-    def update_members(self,state):
+    def update_members(self):
         for member in self.members:
-            member.update(state)
+            member.update(type(self).__name__)
             if member.alive==False:
                 self.dead.add(member)
             if member.od==True:
@@ -94,7 +94,7 @@ class NoTreatment(State):
         self.own_state="no_treatment"
         
     def update(self):
-        super(NoTreatment,self).update_members("NoTreatment")
+        super(NoTreatment,self).update_members()
         
     def transfer_risk_drug_free_treatment(self,individual,year):
         return 0.1
@@ -124,7 +124,7 @@ class DrugFreeTreatment(State):
         self.own_state="drug_free_treatment"
         
     def update(self):
-        super(DrugFreeTreatment,self).update_members("DrugFreeTreatment")
+        super(DrugFreeTreatment,self).update_members()
         
     def transfer_risk_no_treatment(self,individual,year):
         return 0.3
@@ -149,7 +149,7 @@ class OMT(State):
         self.own_state="omt"
         
     def update(self):
-        super(OMT,self).update_members("OMT")
+        super(OMT,self).update_members()
         
     def transfer_risk_no_treatment(self,individual,year):
         return 0.05
