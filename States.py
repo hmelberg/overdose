@@ -14,15 +14,9 @@ like to do this in the State class so that I don't need to duplicate this
 functionality in each of the three subclasses, but this needs to take into
 account that the three different subclasses only ...
 
-NO - Here's how I can do it: Each class returns a probability for each of the
-three states - including itself (1- the sum of the two transition
- probabilities). The superclass sorts the members within any class into three
- groups: Those "transitioning" to state 1, 2 or 3 (in other words, including
- stayers). The superclass can have a function for ejecting as well as 
- receiving a set of individuals - and the subclasses can call these as 
- appropriate.
-"""
 
+"""
+import random
 
 class State(object):
     
@@ -30,6 +24,9 @@ class State(object):
         self.members=set([])
         self.dead=set([])
         self.od=set([])
+        self.transition_omt=set([])
+        self.transition_no_treatment=set([])
+        self.transition_drug_free_treatment=set([])
         
     def update_members(self,state):
         for member in self.members:
@@ -41,19 +38,45 @@ class State(object):
         for corpse in self.dead:
             self.members.remove(corpse)
             
-    def transfer_draw(self,year):
+    def find_transitions(self,year):
+        self.transition_omt=set([])
+        self.transition_no_treatment=set([])
+        self.transition_drug_free_treatment=set([])
+        
         for individual in self.members:
             transfer_risks = \
-                individual.calculate_transfer_risks(individual,year)
-            state_list=transfer_risks.keys()
+                self.calculate_transfer_risks(individual,year)
             random_draw=random.random()
-            if random_draw < transfer_risks[state_list[0]]:
-                new_state=0
-            else if random_draw < transfer_risks[state_list[0]]+ \
-                transfer_risks[state_list[1]]:
-                new_state=1
+            if random_draw < transfer_risks["omt"]:
+                self.transition_omt.add(individual)
+            elif random_draw < (transfer_risks["omt"] + \
+                transfer_risks["no_treatment"]):
+                self.transition_no_treatment.add(individual)
             else:
-                new_state=2 
+                self.transition_drug_free_treatment.add(individual)
+                
+    def receive_members(self,individuals):
+        for individual in individuals:
+            self.members.add(individual)
+            
+    def give_members(self,state_type):
+        transfers = set([])
+        if state_type == self.own_state:
+            pass
+        elif state_type == "omt":
+            for member in self.transition_omt:
+                transfers.add(member)
+                self.members.remove(member)
+        elif state_type == "no_treatment":
+            for member in self.transition_no_treatment:
+                transfers.add(member)                
+                self.members.remove(member)
+        elif state_type == "drug_free_treatment":
+            for member in self.transition_drug_free_treatment:
+                transfers.add(member)
+                self.members.remove(member)
+        return transfers
+            
             
     def summarize(self):
         """Exports information on the state,
@@ -63,19 +86,18 @@ class State(object):
         
 class NoTreatment(State):
     use_shock = (0,0)
-    use_risk_shock = 1
+    use_risk = 0.0
     death_risk_shock = 1
 
     def __init__(self):
-        super(State,self).__init__()
-        self.transfers_drug_free_treatment=set([])
-        self.transfers_omt=set([])
+        super(NoTreatment,self).__init__()
+        self.own_state="no_treatment"
         
     def update(self):
-        super(State,self).update_members("NoTreatment")
+        super(NoTreatment,self).update_members("NoTreatment")
         
     def transfer_risk_drug_free_treatment(self,individual,year):
-        0.1
+        return 0.1
     def transfer_risk_omt(self,individual,year):
         """This probability should vary over time, given the change in
         OMT capacity and intake criteria."""
@@ -89,52 +111,50 @@ class NoTreatment(State):
         risks["drug_free_treatment"] = \
             self.transfer_risk_drug_free_treatment(individual,year)
         risks["omt"]=self.transfer_risk_omt(individual,year)
+        risks["no_treatment"]=(1-risks["omt"]-risks["drug_free_treatment"])
         return risks
         
 class DrugFreeTreatment(State):
     use_shock = (-5,2)
-    use_risk = 1
+    use_risk = -0.1
     death_risk_shock = 0.7
 
     def __init__(self):
-        super(State,self).__init__()
-        self.transfers_omt=set([])
-        self.transfers_no_treatment=set([])
+        super(DrugFreeTreatment,self).__init__()
+        self.own_state="drug_free_treatment"
         
     def update(self):
-        super(State,self).update_members("DrugFreeTreatment")
+        super(DrugFreeTreatment,self).update_members("DrugFreeTreatment")
         
     def transfer_risk_no_treatment(self,individual,year):
-        0.3
+        return 0.3
     def transfer_risk_omt(self,individual,year):
-        0
+         return 0
         
     def calculate_transfer_risks(self,individual,year):
         risks = {}
-        risks["no_treatment"] \ =
+        risks["no_treatment"]  = \
             self.transfer_risk_no_treatment(individual,year)
         risks["omt"]=self.transfer_risk_omt(individual,year)
+        risks["drug_free_treatment"]=(1-risks["no_treatment"]-risks["omt"])
         return risks
-
-
 
 class OMT(State):
     use_shock = (-2,1)
-    use_risk = 0.5
+    use_risk = -0.3
     death_risk_shock = 0.7
 
     def __init__(self):
-        super(State,self).__init__()
-        self.transfers_no_treatment=set([])
-        self.transfers_drug_free_treatment=set([])
+        super(OMT,self).__init__()
+        self.own_state="omt"
         
     def update(self):
-        super(State,self).update_members("OMT")
+        super(OMT,self).update_members("OMT")
         
     def transfer_risk_no_treatment(self,individual,year):
-        0.05
+        return 0.05
     def transfer_risk_drug_free_treatment(self,individual,year):
-        0.05
+        return 0.05
         
     def calculate_transfer_risks(self,individual,year):
         risks = {}
@@ -142,6 +162,7 @@ class OMT(State):
             self.transfer_risk_no_treatment(individual,year)
         risks["drug_free_treatment"] = \
             self.transfer_risk_drug_free_treatment(individual,year)
+        risks["omt"]=(1-risks["no_treatment"]-risks["drug_free_treatment"])
         return risks
        
 
